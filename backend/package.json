@@ -5,6 +5,10 @@
   "author": "Elias Feijó",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
   "dependencies": {
     "express": "^4.17.1"
   },
