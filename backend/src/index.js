@@ -2,6 +2,8 @@ const express = require('express');
 const dbConnection = require('./database/index');
 
 const app = express();
+app.use(require('./routes'));
+
 const port = 3000;
 
 (async () => {
@@ -11,10 +13,7 @@ const port = 3000;
   } catch(e) {
     console.log('Error connecting to the database:', e);
   }
-  app.get('/', (req, res) => {
-    res.send('Hello World');
-  });
-  
+
   app.listen(port, () => {
     console.log(`Application listening at http://localhost:${port}`);
   });
