@@ -2,6 +2,9 @@ const express = require('express');
 const dbConnection = require('./database/index');
 
 const app = express();
+
+app.use(express.json()) // for parsing application/json
+app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 app.use(require('./routes'));
 
 const port = 3000;
