@@ -10,7 +10,9 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "bcrypt": "^5.0.1",
     "express": "^4.17.1",
+    "lodash": "^4.17.21",
     "pg": "^8.7.1",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.8.0"
