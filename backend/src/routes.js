@@ -10,5 +10,6 @@ routes.get('/', (req, res) => {
 
 routes.post('/api/users', UsersController.create);
 routes.get('/api/users', UsersController.getAll);
+routes.get('/api/users/:id', UsersController.getById);
 
 module.exports = routes;

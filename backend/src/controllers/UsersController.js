@@ -34,5 +34,24 @@ module.exports = {
     };
 
     return;
+  },
+
+  async getById(req, res) {
+
+    const { id } = req.params;
+
+    if(isNaN(id)) {
+      return res.status(400).json({ message: 'Field "id" is invalid' });
+    }
+
+    try {
+      const user = await models.User.findByPk(id);
+      res.status(200).json(user.toJSON());
+    }
+    catch(error) {
+      res.status(404).json( { message: `User with id ${id} not found` });
+    };
+
+    return;
   }
 };
