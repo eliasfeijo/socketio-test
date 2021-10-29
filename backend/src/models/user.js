@@ -11,8 +11,15 @@ module.exports = (sequelize) => {
 			primaryKey: true,
 			type: DataTypes.INTEGER
 		},
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
+    name: {
+      allowNull: false,
+      type: DataTypes.STRING,
+    },
+    email:{
+      allowNull: false,
+      unique: true,
+      type: DataTypes.STRING
+    },
     password_digest: DataTypes.STRING
   }, {
     sequelize,
