@@ -9,5 +9,6 @@ routes.get('/', (req, res) => {
 });
 
 routes.post('/api/users', UsersController.create);
+routes.get('/api/users', UsersController.getAll);
 
 module.exports = routes;

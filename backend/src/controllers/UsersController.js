@@ -22,5 +22,17 @@ module.exports = {
     };
 
     return;
+  },
+
+  async getAll(req, res) {
+    try {
+      const users = await models.User.findAll()
+      res.status(200).json(users);
+    }
+    catch(error) {
+      res.status(400).json(error)
+    };
+
+    return;
   }
 };
