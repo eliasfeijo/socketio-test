@@ -76,7 +76,36 @@ module.exports = {
         await user.save();
         res.status(200).json(user.toJSON());
       } catch (error) {
-        res.status(404).json(error);
+        res.status(400).json(error);
+      }
+    }
+    catch(error) {
+      res.status(404).json( { message: `User with id ${id} not found` });
+    };
+
+    return;
+  },
+
+  async delete(req, res) {
+
+    const { id } = req.params;
+
+    if(isNaN(id)) {
+      return res.status(400).json({ message: 'Field "id" is invalid' });
+    }
+
+    try {
+      const user = await models.User.findByPk(id);
+      if(user) {
+        try {
+          await models.User.destroy({ where: { id: id } });
+          res.status(200).json({ message: `User with id ${id} deleted successfully` });
+        } catch (error) {
+          res.status(400).json(error);
+        }
+      }
+      else {
+        res.status(404).json( { message: `User with id ${id} not found` });
       }
     }
     catch(error) {
