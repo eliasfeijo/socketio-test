@@ -1,4 +1,6 @@
 const { models } = require('../database/index');
+const _ = require('lodash');
+const bcrypt = require('bcrypt');
 
 module.exports = {
   async create(req, res) {
@@ -10,12 +12,15 @@ module.exports = {
     }
 
     try {
+      const salt = await bcrypt.genSalt(10);
+      const password_digest = await bcrypt.hash(password, salt);
+
       const user = await models.User.create({
         email: email,
         name: name,
-        password_digest: password,
+        password_digest: password_digest,
       });
-      res.status(201).json(user.toJSON());
+      res.status(201).json(_.omit(user.toJSON(), ['password_digest']));
     }
     catch(error) {
       res.status(400).json(error)
@@ -26,7 +31,10 @@ module.exports = {
 
   async getAll(req, res) {
     try {
-      const users = await models.User.findAll()
+      const usersWithPassword = await models.User.findAll();
+      const users = usersWithPassword.map((user) => {
+        return _.omit(user.toJSON(), ['password_digest']);
+      });
       res.status(200).json(users);
     }
     catch(error) {
@@ -46,7 +54,7 @@ module.exports = {
 
     try {
       const user = await models.User.findByPk(id);
-      res.status(200).json(user.toJSON());
+      res.status(200).json(_.omit(user.toJSON(), ['password_digest']));
     }
     catch(error) {
       res.status(404).json( { message: `User with id ${id} not found` });
@@ -74,7 +82,7 @@ module.exports = {
       }
       try {
         await user.save();
-        res.status(200).json(user.toJSON());
+        res.status(200).json(_.omit(user.toJSON(), ['password_digest']));
       } catch (error) {
         res.status(400).json(error);
       }
