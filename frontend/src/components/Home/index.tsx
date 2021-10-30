@@ -1,12 +1,15 @@
 import axios, { AxiosError } from "axios";
 import React, { useContext, useEffect, useState, useCallback } from "react";
 import { useCookies } from "react-cookie";
+import { useHistory } from "react-router-dom";
 import { ActionTypes, AppContext, IUser } from "../../contexts/AppContext";
 import FormLogin from "./FormLogin";
 import FormRegister from "./FormRegister";
 
 const Home = (): JSX.Element => {
   const { state, dispatch } = useContext(AppContext);
+
+  const history = useHistory();
 
   enum Screens {
     Login = "LOGIN",
@@ -243,6 +246,14 @@ const Home = (): JSX.Element => {
               <h2 className="text-2xl text-center">
                 Welcome <b>{state.user.name}</b>
               </h2>
+              <div
+                onClick={() => {
+                  history.push("/chat");
+                }}
+                className="cursor-pointer mt-2 p-2 bg-gray-800 rounded text-white text-center"
+              >
+                <p>Enter Chat</p>
+              </div>
               <p className="pt-2 text-center">
                 <a
                   href=""
