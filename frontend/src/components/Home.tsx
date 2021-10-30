@@ -1,10 +1,11 @@
+import axios, { AxiosError } from "axios";
 import React, { FormEvent, useContext, useState } from "react";
 import Loader from "react-loader-spinner";
-import { AppContext } from "../contexts/AppContext";
+import { ActionTypes, AppContext, IUser } from "../contexts/AppContext";
 import { validateEmail } from "../utils/Validations";
 
 const Home = (): JSX.Element => {
-  const { state } = useContext(AppContext);
+  const { state, dispatch } = useContext(AppContext);
 
   const [email, setEmail] = useState("");
   const [emailHasError, setEmailHasError] = useState(false);
@@ -15,6 +16,44 @@ const Home = (): JSX.Element => {
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
   const [isLoadingFormSubmit, setIsLoadingFormSubmit] = useState(false);
+
+  const performLogin = async () => {
+    interface LoginResponse {
+      user: IUser;
+      token: string;
+    }
+
+    try {
+      const response = await axios.post<LoginResponse>(
+        "http://localhost:3000/api/login",
+        {
+          email,
+          password,
+        }
+      );
+      if (response.status !== 200) {
+        console.log("Unexpected status code:", response);
+        setIsLoadingFormSubmit(false);
+        return;
+      }
+      console.log(response.data);
+      const user = response.data.user;
+      const token = response.data.token;
+      dispatch({
+        type: ActionTypes.LOGIN,
+        loginInfo: { user, token },
+      });
+    } catch (error) {
+      const response = (error as AxiosError).response;
+      if (response && response.data) {
+        console.log("Error performing login:", response.data.message);
+      } else {
+        console.log("Error performing login:", error);
+      }
+    }
+    setIsLoadingFormSubmit(false);
+    return;
+  };
 
   const handleLoginFormSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -48,6 +87,8 @@ const Home = (): JSX.Element => {
     }
 
     setIsLoadingFormSubmit(true);
+
+    performLogin();
 
     return;
   };
