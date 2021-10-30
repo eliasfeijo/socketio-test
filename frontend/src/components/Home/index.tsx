@@ -1,10 +1,11 @@
+import axios, { AxiosError } from "axios";
 import React, { useContext, useState } from "react";
-import { AppContext } from "../../contexts/AppContext";
+import { ActionTypes, AppContext, IUser } from "../../contexts/AppContext";
 import FormLogin from "./FormLogin";
 import FormRegister from "./FormRegister";
 
 const Home = (): JSX.Element => {
-  const { state } = useContext(AppContext);
+  const { state, dispatch } = useContext(AppContext);
 
   const SCREENS = {
     LOGIN: "LOGIN",
@@ -13,6 +14,50 @@ const Home = (): JSX.Element => {
   };
 
   const [screen, setScreen] = useState(SCREENS.LOGIN);
+
+  const performLogin = async (
+    email: string,
+    password: string,
+    callback: (hasError: boolean, errorMessage: string) => void
+  ) => {
+    interface LoginResponse {
+      user: IUser;
+      token: string;
+    }
+
+    try {
+      const response = await axios.post<LoginResponse>(
+        "http://localhost:3000/api/login",
+        {
+          email,
+          password,
+        }
+      );
+      if (response.status !== 200) {
+        console.log("Unexpected status code:", response.status);
+        callback(true, "Login Failed.");
+        return;
+      }
+      const user = response.data.user;
+      const token = response.data.token;
+      dispatch({
+        type: ActionTypes.LOGIN,
+        loginInfo: { user, token },
+      });
+      callback(false, "");
+      setScreen(SCREENS.USER_INFO);
+    } catch (error) {
+      const response = (error as AxiosError).response;
+      if (response && response.data) {
+        console.log("Error performing login:", response.data.message);
+        callback(true, "Invalid Email or Password.");
+      } else {
+        console.log("Error performing login:", error);
+        callback(true, "Login Failed.");
+      }
+    }
+    return;
+  };
 
   const renderHome = () => {
     switch (screen) {
@@ -34,7 +79,7 @@ const Home = (): JSX.Element => {
                   Register here.
                 </a>
               </p>
-              <FormLogin onLogin={() => setScreen(SCREENS.USER_INFO)} />
+              <FormLogin performLogin={performLogin} />
             </div>
           );
         }

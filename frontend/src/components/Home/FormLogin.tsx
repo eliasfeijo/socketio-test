@@ -1,22 +1,16 @@
-import axios, { AxiosError } from "axios";
-import React, {
-  FormEvent,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import Loader from "react-loader-spinner";
-import { ActionTypes, AppContext, IUser } from "../../contexts/AppContext";
 import { validateEmail } from "../../utils/Validations";
 
 interface Params {
-  onLogin: () => void;
+  performLogin: (
+    email: string,
+    password: string,
+    callback: (hasError: boolean, errorMessage: string) => void
+  ) => void;
 }
 
-const FormLogin = ({ onLogin }: Params): JSX.Element => {
-  const { dispatch } = useContext(AppContext);
-
+const FormLogin = ({ performLogin }: Params): JSX.Element => {
   const [email, setEmail] = useState("");
   const [emailHasError, setEmailHasError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
@@ -38,48 +32,6 @@ const FormLogin = ({ onLogin }: Params): JSX.Element => {
       isMounted.current = false;
     };
   }, []);
-
-  const performLogin = useCallback(
-    async (performLoginCallback) => {
-      interface LoginResponse {
-        user: IUser;
-        token: string;
-      }
-
-      try {
-        const response = await axios.post<LoginResponse>(
-          "http://localhost:3000/api/login",
-          {
-            email,
-            password,
-          }
-        );
-        if (response.status !== 200) {
-          console.log("Unexpected status code:", response.status);
-          performLoginCallback(true, "Login Failed.");
-          return;
-        }
-        const user = response.data.user;
-        const token = response.data.token;
-        dispatch({
-          type: ActionTypes.LOGIN,
-          loginInfo: { user, token },
-        });
-        performLoginCallback(false, "");
-      } catch (error) {
-        const response = (error as AxiosError).response;
-        if (response && response.data) {
-          console.log("Error performing login:", response.data.message);
-          performLoginCallback(true, "Invalid Email or Password.");
-        } else {
-          console.log("Error performing login:", error);
-          performLoginCallback(true, "Login Failed.");
-        }
-      }
-      return;
-    },
-    [dispatch, email, password]
-  );
 
   const handleLoginFormSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -124,14 +76,11 @@ const FormLogin = ({ onLogin }: Params): JSX.Element => {
         setLoginErrorMessage(errorMessage);
         setIsLoadingFormSubmit(false);
       }
-      if (!hasError) {
-        onLogin();
-      }
     };
     if (isLoadingFormSubmit) {
-      performLogin(performLoginCallback);
+      performLogin(email, password, performLoginCallback);
     }
-  }, [isLoadingFormSubmit, onLogin, performLogin]);
+  }, [email, isLoadingFormSubmit, password, performLogin]);
 
   return (
     <div className="flex justify-center">
