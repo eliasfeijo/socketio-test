@@ -1,11 +1,11 @@
 import axios, { AxiosError } from "axios";
 import React, { FormEvent, useContext, useState } from "react";
 import Loader from "react-loader-spinner";
-import { ActionTypes, AppContext, IUser } from "../contexts/AppContext";
-import { validateEmail } from "../utils/Validations";
+import { ActionTypes, AppContext, IUser } from "../../contexts/AppContext";
+import { validateEmail } from "../../utils/Validations";
 
-const Home = (): JSX.Element => {
-  const { state, dispatch } = useContext(AppContext);
+const FormLogin = (): JSX.Element => {
+  const { dispatch } = useContext(AppContext);
 
   const [email, setEmail] = useState("");
   const [emailHasError, setEmailHasError] = useState(false);
@@ -101,89 +101,61 @@ const Home = (): JSX.Element => {
     return;
   };
 
-  const renderLoginForm = () => {
-    return (
-      <div className="flex justify-center">
-        <form
-          onSubmit={handleLoginFormSubmit}
-          className="flex flex-col items-center pt-4 space-y-2 w-2/4"
-        >
-          <div>
-            <input
-              type="text"
-              placeholder="Email"
-              value={email}
-              required
-              onChange={(event) => {
-                setEmail(event.target.value);
-              }}
-              className={emailHasError ? "border-red-500" : ""}
-            />
-            {emailHasError && (
-              <p className="text-sm text-red-500 pb-2">{emailErrorMessage}</p>
-            )}
-          </div>
-          <div>
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              required
-              onChange={(event) => {
-                setPassword(event.target.value);
-              }}
-              className={passwordHasError ? "border-red-500" : ""}
-            />
-            {passwordHasError && (
-              <p className="text-sm text-red-500 pb-2">
-                {passwordErrorMessage}
-              </p>
-            )}
-          </div>
-          {loginHasError ? (
-            <div className="my-2 w-48">
-              <p className="text-red-500">{loginErrorMessage}</p>
-            </div>
-          ) : null}
-          {!isLoadingFormSubmit ? (
-            <input
-              type="submit"
-              value="Submit"
-              className="p-2 rounded bg-gray-800 text-white w-20"
-            />
-          ) : (
-            <div className="p-2 rounded bg-gray-800 w-20 flex justify-center">
-              <Loader type="Oval" color="#FFFFFF" height={20} width={20} />
-            </div>
-          )}
-        </form>
-      </div>
-    );
-  };
-
-  const renderHome = () => {
-    if (!state.token || !state.user) {
-      return (
-        <div>
-          <h2 className="text-2xl text-center">Login</h2>
-          {renderLoginForm()}
-        </div>
-      );
-    }
-    return (
-      <div>
-        <h2 className="text-2xl text-center">
-          Welcome <b>{state.user.name}</b>
-        </h2>
-      </div>
-    );
-  };
-
   return (
-    <div className="flex justify-center align-center items-center h-full">
-      {renderHome()}
+    <div className="flex justify-center">
+      <form
+        onSubmit={handleLoginFormSubmit}
+        className="flex flex-col items-center pt-4 space-y-2 w-2/4"
+      >
+        <div>
+          <input
+            type="text"
+            placeholder="Email"
+            value={email}
+            required
+            onChange={(event) => {
+              setEmail(event.target.value);
+            }}
+            className={emailHasError ? "border-red-500" : ""}
+          />
+          {emailHasError && (
+            <p className="text-sm text-red-500 pb-2">{emailErrorMessage}</p>
+          )}
+        </div>
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            required
+            onChange={(event) => {
+              setPassword(event.target.value);
+            }}
+            className={passwordHasError ? "border-red-500" : ""}
+          />
+          {passwordHasError && (
+            <p className="text-sm text-red-500 pb-2">{passwordErrorMessage}</p>
+          )}
+        </div>
+        {loginHasError ? (
+          <div className="my-2 w-48">
+            <p className="text-red-500">{loginErrorMessage}</p>
+          </div>
+        ) : null}
+        {!isLoadingFormSubmit ? (
+          <input
+            type="submit"
+            value="Submit"
+            className="p-2 rounded bg-gray-800 text-white w-20"
+          />
+        ) : (
+          <div className="p-2 rounded bg-gray-800 w-20 flex justify-center">
+            <Loader type="Oval" color="#FFFFFF" height={20} width={20} />
+          </div>
+        )}
+      </form>
     </div>
   );
 };
 
-export default Home;
+export default FormLogin;
