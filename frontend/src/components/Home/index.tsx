@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { useCookies } from "react-cookie";
 import { ActionTypes, AppContext, IUser } from "../../contexts/AppContext";
 import FormLogin from "./FormLogin";
@@ -18,16 +18,68 @@ const Home = (): JSX.Element => {
 
   const [cookies, setCookie, removeCookie] = useCookies(["auth"]);
 
+  const performRefreshToken = useCallback(
+    async (oldToken) => {
+      interface RefreshTokenResponse {
+        user: IUser;
+        token: string;
+      }
+
+      try {
+        const response = await axios.post<RefreshTokenResponse>(
+          "http://localhost:3000/api/refreshToken",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${oldToken}`,
+            },
+          }
+        );
+        if (response.status !== 200) {
+          console.log("Unexpected status code:", response.status);
+          return;
+        }
+        const user = response.data.user;
+        const token = response.data.token;
+        dispatch({
+          type: ActionTypes.LOGIN,
+          loginInfo: { user, token },
+        });
+        const cookieExpires = new Date();
+        cookieExpires.setHours(cookieExpires.getHours() + 11);
+        const lastLogin = Date.now();
+        setCookie(
+          "auth",
+          { user, token, lastLogin },
+          {
+            path: "/",
+            expires: cookieExpires,
+          }
+        );
+        setScreen(Screens.UserInfo);
+      } catch (error) {
+        console.log("Error performing refreshToken:", error);
+        removeCookie("auth", { path: "/" });
+      }
+      return;
+    },
+    [Screens.UserInfo, dispatch, removeCookie, setCookie]
+  );
+
   useEffect(() => {
     if (cookies.auth) {
-      const { user, token } = cookies.auth;
-      dispatch({
-        type: ActionTypes.LOGIN,
-        loginInfo: { user, token },
-      });
-      setScreen(Screens.UserInfo);
+      const { user, token, lastLogin } = cookies.auth;
+      if (Date.now() - lastLogin > 1000 * 60 * 60) {
+        performRefreshToken(token);
+      } else {
+        dispatch({
+          type: ActionTypes.LOGIN,
+          loginInfo: { user, token },
+        });
+        setScreen(Screens.UserInfo);
+      }
     }
-  }, [Screens.UserInfo, cookies.auth, dispatch]);
+  }, [Screens.UserInfo, cookies.auth, dispatch, performRefreshToken]);
 
   const performLogout = () => {
     removeCookie("auth", { path: "/" });
@@ -66,9 +118,10 @@ const Home = (): JSX.Element => {
       });
       const cookieExpires = new Date();
       cookieExpires.setHours(cookieExpires.getHours() + 11);
+      const lastLogin = Date.now();
       setCookie(
         "auth",
-        { user, token },
+        { user, token, lastLogin },
         {
           path: "/",
           expires: cookieExpires,
