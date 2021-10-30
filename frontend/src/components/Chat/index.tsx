@@ -12,6 +12,12 @@ const Chat = (): JSX.Element => {
 
   const [connected, setConnected] = useState(false);
 
+  interface ChatMessage {
+    from: IUser | null;
+    date: number;
+    message: string;
+  }
+
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
@@ -20,12 +26,13 @@ const Chat = (): JSX.Element => {
       return;
     }
     if (!connected) {
-      console.log("setting socket...");
       socket.current = io("http://localhost:3000", {
         path: "/ws/",
         extraHeaders: { Authorization: `Bearer ${state.token}` },
       });
       setConnected(true);
+    }
+    if (socket.current) {
       socket.current.on("message", (msg) => {
         msg = JSON.parse(msg);
         setChatMessages([...chatMessages, msg]);
@@ -34,12 +41,6 @@ const Chat = (): JSX.Element => {
   }, [chatMessages, connected, history, state.token, state.user]);
 
   const [message, setMessage] = useState("");
-
-  interface ChatMessage {
-    from: IUser | null;
-    date: number;
-    message: string;
-  }
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +58,7 @@ const Chat = (): JSX.Element => {
       const date = new Date(chatMessage.date);
       return (
         <p key={chatMessage.date} className="p-2">
-          <i>
+          <i className="text-sm">
             {date.getHours() >= 10 ? date.getHours() : "0" + date.getHours()}:
             {date.getMinutes() >= 10
               ? date.getMinutes()
@@ -81,8 +82,10 @@ const Chat = (): JSX.Element => {
         date: Date.now(),
         message: message,
       };
-      setChatMessages([...chatMessages, msg]);
-      setMessage("");
+      if (socket.current) {
+        socket.current.emit("message", JSON.stringify(msg));
+        setMessage("");
+      }
     }
   };
 
