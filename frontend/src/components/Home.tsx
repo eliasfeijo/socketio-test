@@ -1,22 +1,46 @@
 import React, { FormEvent, useContext, useState } from "react";
 import { AppContext } from "../contexts/AppContext";
+import { validateEmail } from "../utils/Validations";
 
 const Home = (): JSX.Element => {
   const { state } = useContext(AppContext);
 
   const [email, setEmail] = useState("");
+  const [emailHasError, setEmailHasError] = useState(false);
+  const [emailErrorMessage, setEmailErrorMessage] = useState("");
+
   const [password, setPassword] = useState("");
+  const [passwordHasError, setPasswordHasError] = useState(false);
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
   const handleLoginFormSubmit = (event: FormEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    if (!email) {
+
+    let validationPassed = true;
+
+    if (email.length < 3 || !validateEmail(email)) {
+      setEmailHasError(true);
+      setEmailErrorMessage("Invalid Email.");
+      validationPassed = false;
+    } else {
+      setEmailHasError(false);
+      setEmailErrorMessage("");
+    }
+    if (password.length < 3) {
+      setPasswordHasError(true);
+      setPasswordErrorMessage("Invalid Password.");
+      validationPassed = false;
+    } else {
+      setPasswordHasError(false);
+      setPasswordErrorMessage("");
+    }
+
+    if (!validationPassed) {
       return;
     }
-    if (!password) {
-      return;
-    }
-    alert("Login\nEmail: " + email);
+
+    return;
   };
 
   const renderLoginForm = () => {
@@ -26,22 +50,38 @@ const Home = (): JSX.Element => {
           onSubmit={handleLoginFormSubmit}
           className="flex flex-col items-center pt-4 space-y-2 w-2/4"
         >
-          <input
-            type="text"
-            placeholder="Email"
-            value={email}
-            onChange={(event) => {
-              setEmail(event.target.value);
-            }}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-            }}
-          />
+          <div>
+            <input
+              type="text"
+              placeholder="Email"
+              value={email}
+              required
+              onChange={(event) => {
+                setEmail(event.target.value);
+              }}
+              className={emailHasError ? "border-red-500" : ""}
+            />
+            {emailHasError && (
+              <p className="text-sm text-red-500 pb-2">{emailErrorMessage}</p>
+            )}
+          </div>
+          <div>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              required
+              onChange={(event) => {
+                setPassword(event.target.value);
+              }}
+              className={passwordHasError ? "border-red-500" : ""}
+            />
+            {passwordHasError && (
+              <p className="text-sm text-red-500 pb-2">
+                {passwordErrorMessage}
+              </p>
+            )}
+          </div>
           <input
             type="submit"
             value="Submit"
