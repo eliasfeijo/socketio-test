@@ -1,8 +1,44 @@
 const { models } = require('../database/index');
 const _ = require('lodash');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+const JWTSecret = 'secret';
 
 module.exports = {
+  async login(req, res) {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(401).json({ message: "Fields 'email' or 'password' are missing" })
+    }
+
+    try {
+      const user = await models.User.findOne({ where: { email: email } });
+      const validPassword = await bcrypt.compare(password, user.password_digest);
+      if (!validPassword) {
+        return res.status(401).json({
+          message: "Fields 'email' or 'password' are invalid"
+        })
+      }
+      jwt.sign({ id: user.id }, JWTSecret, { expiresIn: '12h' }, (err, token) => {
+          if (err) {
+              return res.status(500).json({
+                  message: "Error generating token"
+              })
+          } else {
+              return res.status(200).json({ token: token, user: _.omit(user.toJSON(), ['password_digest']) });
+          }
+      });
+    }
+    catch(error) {
+      return res.status(401).json({
+        message: "Fields 'email' or 'password' are invalid"
+      })
+    };
+
+    return;
+  },
   async create(req, res) {
 
     let { name, email, password } = req.body;
@@ -78,7 +114,9 @@ module.exports = {
       user.email = email ? email : user.email;
       user.name = name ? name : user.name;
       if(password) {
-        user.password_digest = password;
+        const salt = await bcrypt.genSalt(10);
+        const password_digest = await bcrypt.hash(password, salt);
+        user.password_digest = password_digest;
       }
       try {
         await user.save();

@@ -8,6 +8,10 @@ routes.get('/', (req, res) => {
   res.send('Hello World');
 });
 
+// Login route
+routes.post('/api/login', UsersController.login);
+
+// User routes
 routes.post('/api/users', UsersController.create);
 routes.get('/api/users', UsersController.getAll);
 routes.get('/api/users/:id', UsersController.getById);
