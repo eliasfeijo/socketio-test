@@ -23,7 +23,6 @@ app.use(express.urlencoded({ extended: true })) // for parsing application/x-www
 app.use(require('./routes'));
 
 io.use(function(socket, next){
-  console.log(socket.handshake.headers);
   if (socket.handshake.headers){
     const authorization = socket.handshake.headers.authorization;
     if(!authorization) {
@@ -49,11 +48,10 @@ io.use(function(socket, next){
   }    
 })
 .on('connection', async function(socket) {
-  console.log(`ws: User with id ${socket.userId} connected`);
   const user = await dbConnection.models.User.findByPk(socket.userId);
   io.emit('message', JSON.stringify({from: 'SYSTEM', date: Date.now(), message: `${user.name} has connected to the chat.`}));
   socket.on('disconnect', () => {
-    console.log('user disconnected');
+    io.emit('message', JSON.stringify({from: 'SYSTEM', date: Date.now(), message: `${user.name} has disconnected.`}));
   });
   socket.on('message', function(message) {
     io.emit('message', message);
