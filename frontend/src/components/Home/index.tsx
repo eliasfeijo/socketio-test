@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { AppContext } from "../../contexts/AppContext";
 import FormLogin from "./FormLogin";
+import FormRegister from "./FormRegister";
 
 const Home = (): JSX.Element => {
   const { state } = useContext(AppContext);
@@ -40,7 +41,21 @@ const Home = (): JSX.Element => {
       case SCREENS.REGISTER:
         return (
           <div>
-            <h2>Register</h2>
+            <h2 className="text-2xl text-center">Register</h2>
+            <p className="pt-2 text-sm text-center">
+              Already have an account?{" "}
+              <a
+                href=""
+                className="link"
+                onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
+                  event.preventDefault();
+                  setScreen(SCREENS.LOGIN);
+                }}
+              >
+                Login here.
+              </a>
+            </p>
+            <FormRegister onRegister={() => setScreen(SCREENS.LOGIN)} />
           </div>
         );
       case SCREENS.USER_INFO:
