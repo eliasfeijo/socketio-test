@@ -1,10 +1,20 @@
 import axios, { AxiosError } from "axios";
-import React, { FormEvent, useContext, useState } from "react";
+import React, {
+  FormEvent,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import Loader from "react-loader-spinner";
 import { ActionTypes, AppContext, IUser } from "../../contexts/AppContext";
 import { validateEmail } from "../../utils/Validations";
 
-const FormLogin = (): JSX.Element => {
+interface Params {
+  onLogin: () => void;
+}
+
+const FormLogin = ({ onLogin }: Params): JSX.Element => {
   const { dispatch } = useContext(AppContext);
 
   const [email, setEmail] = useState("");
@@ -20,48 +30,56 @@ const FormLogin = (): JSX.Element => {
   const [loginHasError, setLoginHasError] = useState(false);
   const [loginErrorMessage, setLoginErrorMessage] = useState("");
 
-  const performLogin = async () => {
-    interface LoginResponse {
-      user: IUser;
-      token: string;
-    }
+  const isMounted = React.useRef(true);
 
-    try {
-      const response = await axios.post<LoginResponse>(
-        "http://localhost:3000/api/login",
-        {
-          email,
-          password,
+  React.useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const performLogin = useCallback(
+    async (performLoginCallback) => {
+      interface LoginResponse {
+        user: IUser;
+        token: string;
+      }
+
+      try {
+        const response = await axios.post<LoginResponse>(
+          "http://localhost:3000/api/login",
+          {
+            email,
+            password,
+          }
+        );
+        if (response.status !== 200) {
+          console.log("Unexpected status code:", response.status);
+          performLoginCallback(true, "Login Failed.");
+          return;
         }
-      );
-      if (response.status !== 200) {
-        console.log("Unexpected status code:", response.status);
-        setIsLoadingFormSubmit(false);
-        return;
+        const user = response.data.user;
+        const token = response.data.token;
+        dispatch({
+          type: ActionTypes.LOGIN,
+          loginInfo: { user, token },
+        });
+        performLoginCallback(false, "");
+      } catch (error) {
+        const response = (error as AxiosError).response;
+        if (response && response.data) {
+          console.log("Error performing login:", response.data.message);
+          performLoginCallback(true, "Invalid Email or Password.");
+        } else {
+          console.log("Error performing login:", error);
+          performLoginCallback(true, "Login Failed.");
+        }
       }
-      const user = response.data.user;
-      const token = response.data.token;
-      dispatch({
-        type: ActionTypes.LOGIN,
-        loginInfo: { user, token },
-      });
-      setLoginHasError(false);
-      setLoginErrorMessage("");
-    } catch (error) {
-      const response = (error as AxiosError).response;
-      if (response && response.data) {
-        console.log("Error performing login:", response.data.message);
-        setLoginHasError(true);
-        setLoginErrorMessage("Invalid Email or Password.");
-      } else {
-        console.log("Error performing login:", error);
-        setLoginHasError(true);
-        setLoginErrorMessage("Login Failed.");
-      }
-    }
-    setIsLoadingFormSubmit(false);
-    return;
-  };
+      return;
+    },
+    [dispatch, email, password]
+  );
 
   const handleLoginFormSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -96,10 +114,24 @@ const FormLogin = (): JSX.Element => {
 
     setIsLoadingFormSubmit(true);
 
-    performLogin();
-
     return;
   };
+
+  useEffect(() => {
+    const performLoginCallback = (hasError: boolean, errorMessage: string) => {
+      if (isMounted.current) {
+        setLoginHasError(hasError);
+        setLoginErrorMessage(errorMessage);
+        setIsLoadingFormSubmit(false);
+      }
+      if (!hasError) {
+        onLogin();
+      }
+    };
+    if (isLoadingFormSubmit) {
+      performLogin(performLoginCallback);
+    }
+  }, [isLoadingFormSubmit, onLogin, performLogin]);
 
   return (
     <div className="flex justify-center">
@@ -138,8 +170,8 @@ const FormLogin = (): JSX.Element => {
           )}
         </div>
         {loginHasError ? (
-          <div className="my-2 w-48">
-            <p className="text-red-500">{loginErrorMessage}</p>
+          <div className="my-2 w-56">
+            <p className="text-red-500 text-center">{loginErrorMessage}</p>
           </div>
         ) : null}
         {!isLoadingFormSubmit ? (
