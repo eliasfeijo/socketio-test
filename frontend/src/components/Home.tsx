@@ -1,4 +1,5 @@
 import React, { FormEvent, useContext, useState } from "react";
+import Loader from "react-loader-spinner";
 import { AppContext } from "../contexts/AppContext";
 import { validateEmail } from "../utils/Validations";
 
@@ -13,9 +14,15 @@ const Home = (): JSX.Element => {
   const [passwordHasError, setPasswordHasError] = useState(false);
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
+  const [isLoadingFormSubmit, setIsLoadingFormSubmit] = useState(false);
+
   const handleLoginFormSubmit = (event: FormEvent) => {
     event.preventDefault();
     event.stopPropagation();
+
+    if (isLoadingFormSubmit) {
+      return;
+    }
 
     let validationPassed = true;
 
@@ -39,6 +46,8 @@ const Home = (): JSX.Element => {
     if (!validationPassed) {
       return;
     }
+
+    setIsLoadingFormSubmit(true);
 
     return;
   };
@@ -82,11 +91,17 @@ const Home = (): JSX.Element => {
               </p>
             )}
           </div>
-          <input
-            type="submit"
-            value="Submit"
-            className="p-2 rounded bg-gray-800 text-white"
-          />
+          {!isLoadingFormSubmit ? (
+            <input
+              type="submit"
+              value="Submit"
+              className="p-2 rounded bg-gray-800 text-white w-20"
+            />
+          ) : (
+            <div className="p-2 rounded bg-gray-800 w-20 flex justify-center">
+              <Loader type="Oval" color="#FFFFFF" height={20} width={20} />
+            </div>
+          )}
         </form>
       </div>
     );

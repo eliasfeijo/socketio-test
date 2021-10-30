@@ -6,6 +6,8 @@ import Footer from "./Footer";
 import About from "./About";
 import Home from "./Home";
 
+import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
+
 const App = (): JSX.Element => (
   <Router>
     <div className="h-full flex flex-col">
