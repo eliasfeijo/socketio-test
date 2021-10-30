@@ -1,7 +1,9 @@
 const express = require('express');
 const dbConnection = require('./database/index');
+const http = require('http');
 
 const app = express();
+const server = http.createServer(app);
 
 app.use(express.json()) // for parsing application/json
 app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
@@ -17,7 +19,7 @@ const port = 3000;
     console.log('Error connecting to the database:', e);
   }
 
-  app.listen(port, () => {
+  server.listen(port, () => {
     console.log(`Application listening at http://localhost:${port}`);
   });
 })();
