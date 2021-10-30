@@ -1,11 +1,20 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { AppContext, IUser } from "../../contexts/AppContext";
+import io, { Socket } from "socket.io-client";
 
 const Chat = (): JSX.Element => {
   const { state } = useContext(AppContext);
 
   const history = useHistory();
+
+  const [socket, setSocket] = useState<Socket>();
+
+  useEffect(() => {
+    const newSocket = io(`http://localhost:3000/ws`);
+    setSocket(newSocket);
+    return () => newSocket.close();
+  }, [setSocket]);
 
   const [message, setMessage] = useState("");
 
