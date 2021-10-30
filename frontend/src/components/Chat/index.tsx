@@ -8,13 +8,30 @@ const Chat = (): JSX.Element => {
 
   const history = useHistory();
 
-  const [socket, setSocket] = useState<Socket>();
+  const socket = useRef<Socket | null>(null);
+
+  const [connected, setConnected] = useState(false);
+
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
-    const newSocket = io(`http://localhost:3000/ws`);
-    setSocket(newSocket);
-    return () => newSocket.close();
-  }, [setSocket]);
+    if (!state.user || !state.token) {
+      history.push("/");
+      return;
+    }
+    if (!connected) {
+      console.log("setting socket...");
+      socket.current = io("http://localhost:3000", {
+        path: "/ws/",
+        extraHeaders: { Authorization: `Bearer ${state.token}` },
+      });
+      setConnected(true);
+      socket.current.on("message", (msg) => {
+        msg = JSON.parse(msg);
+        setChatMessages([...chatMessages, msg]);
+      });
+    }
+  }, [chatMessages, connected, history, state.token, state.user]);
 
   const [message, setMessage] = useState("");
 
@@ -23,8 +40,6 @@ const Chat = (): JSX.Element => {
     date: number;
     message: string;
   }
-
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -36,29 +51,22 @@ const Chat = (): JSX.Element => {
     scrollToBottom();
   }, [chatMessages]);
 
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    if (!connected) {
-      setConnected(true);
-      if (!state.user || !state.token) {
-        history.push("/");
-        return;
-      }
-      const msg = {
-        from: null,
-        date: Date.now(),
-        message: `${state.user.name} connected to the chat.`,
-      };
-      setChatMessages([...chatMessages, msg]);
-    }
-  }, [chatMessages, connected, history, state.token, state.user]);
-
   const renderChatMessages = () => {
     return chatMessages.map((chatMessage) => {
       const from = chatMessage.from?.name || "SYSTEM";
+      const date = new Date(chatMessage.date);
       return (
         <p key={chatMessage.date} className="p-2">
+          <i>
+            {date.getHours() >= 10 ? date.getHours() : "0" + date.getHours()}:
+            {date.getMinutes() >= 10
+              ? date.getMinutes()
+              : "0" + date.getMinutes()}
+            :
+            {date.getSeconds() >= 10
+              ? date.getSeconds()
+              : "0" + date.getSeconds()}
+          </i>{" "}
           <b>{from}:</b>{" "}
           <span className="break-all">{chatMessage.message}</span>
         </p>
