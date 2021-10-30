@@ -51,7 +51,7 @@ io.use(function(socket, next){
 .on('connection', async function(socket) {
   console.log(`ws: User with id ${socket.userId} connected`);
   const user = await dbConnection.models.User.findByPk(socket.userId);
-  socket.emit('message', JSON.stringify({from: 'SYSTEM', date: Date.now(), message: `${user.name} connected to the chat.`}));
+  io.emit('message', JSON.stringify({from: 'SYSTEM', date: Date.now(), message: `${user.name} has connected to the chat.`}));
   socket.on('disconnect', () => {
     console.log('user disconnected');
   });
