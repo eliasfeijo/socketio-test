@@ -1,15 +1,64 @@
 const express = require('express');
 const cors = require('cors');
-const dbConnection = require('./database/index');
 const http = require('http');
+const { Server } = require("socket.io");
+const jwt = require('jsonwebtoken');
+
+const dbConnection = require('./database/index');
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server, {
+  path: '/ws/',
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['authorization']
+  }
+});
 
 app.use(cors());
 app.use(express.json()) // for parsing application/json
 app.use(express.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 app.use(require('./routes'));
+
+io.use(function(socket, next){
+  console.log(socket.handshake.headers);
+  if (socket.handshake.headers){
+    const authorization = socket.handshake.headers.authorization;
+    if(!authorization) {
+      return next(new Error('Missing header Authorization'));
+    }
+    try {
+      const token = authorization.split('Bearer ')[1];
+      if (!token) {
+        return next(new Error('Authentication error'));
+      }
+      jwt.verify(token, 'secret', function(err, decoded) {
+        if (err) return next(new Error('Authentication error'));
+        socket.userId = decoded.id;
+        next();
+      });
+    }
+    catch(error) {
+      return next(new Error('Authentication error'));
+    }
+  }
+  else {
+    next(new Error('Missing Headers'));
+  }    
+})
+.on('connection', async function(socket) {
+  console.log(`ws: User with id ${socket.userId} connected`);
+  const user = await dbConnection.models.User.findByPk(socket.userId);
+  socket.emit('message', JSON.stringify({from: 'SYSTEM', date: Date.now(), message: `${user.name} connected to the chat.`}));
+  socket.on('disconnect', () => {
+    console.log('user disconnected');
+  });
+  socket.on('message', function(message) {
+    io.emit('message', message);
+  });
+});
 
 const port = 3000;
 
