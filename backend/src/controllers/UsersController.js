@@ -6,6 +6,28 @@ const jwt = require('jsonwebtoken');
 const JWTSecret = 'secret';
 
 module.exports = {
+  async refreshToken(req, res) {
+    try {
+      const user = await models.User.findByPk(req.userId);
+      jwt.sign({ id: user.id }, JWTSecret, { expiresIn: '12h' }, (err, token) => {
+        if (err) {
+          console.log('Error generating token: ', err);
+          return res.status(500).json({
+              message: "Error generating token"
+          })
+        } else {
+          return res.status(200).json({ token: token, user: _.omit(user.toJSON(), ['password_digest']) });
+        }
+      });
+    }
+    catch(error) {
+      console.log('Error generating token: ', error);
+      return res.status(500).json({
+        message: "Error generating token"
+    })
+    }
+  },
+
   async login(req, res) {
     const { email, password } = req.body;
 
@@ -22,13 +44,14 @@ module.exports = {
         })
       }
       jwt.sign({ id: user.id }, JWTSecret, { expiresIn: '12h' }, (err, token) => {
-          if (err) {
-              return res.status(500).json({
-                  message: "Error generating token"
-              })
-          } else {
-              return res.status(200).json({ token: token, user: _.omit(user.toJSON(), ['password_digest']) });
-          }
+        if (err) {
+          console.log('Error generating token: ', err);
+          return res.status(500).json({
+            message: "Error generating token"
+          })
+        } else {
+          return res.status(200).json({ token: token, user: _.omit(user.toJSON(), ['password_digest']) });
+        }
       });
     }
     catch(error) {

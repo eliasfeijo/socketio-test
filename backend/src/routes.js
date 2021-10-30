@@ -12,6 +12,7 @@ routes.get('/', (req, res) => {
 
 // Login route
 routes.post('/api/login', UsersController.login);
+routes.post('/api/refreshToken', Auth.verifyJWT, UsersController.refreshToken);
 
 // User routes
 routes.post('/api/users', UsersController.create);
