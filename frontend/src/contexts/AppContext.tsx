@@ -16,12 +16,15 @@ type State = {
 
 enum ActionTypes {
   LOGIN = "LOGIN",
+  LOGOUT = "LOGOUT",
 }
 
-type Action = {
-  type: ActionTypes.LOGIN;
-  loginInfo: { user: IUser; token: string };
-};
+type Action =
+  | {
+      type: ActionTypes.LOGIN;
+      loginInfo: { user: IUser; token: string };
+    }
+  | { type: ActionTypes.LOGOUT };
 
 const initialState = { user: null, token: null };
 
@@ -36,6 +39,8 @@ const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case ActionTypes.LOGIN:
       return action.loginInfo;
+    case ActionTypes.LOGOUT:
+      return { user: null, token: null };
     default:
       throw new Error(`TodosContext: Action not found`);
   }

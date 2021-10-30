@@ -1,5 +1,6 @@
 import axios, { AxiosError } from "axios";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { useCookies } from "react-cookie";
 import { ActionTypes, AppContext, IUser } from "../../contexts/AppContext";
 import FormLogin from "./FormLogin";
 import FormRegister from "./FormRegister";
@@ -7,13 +8,32 @@ import FormRegister from "./FormRegister";
 const Home = (): JSX.Element => {
   const { state, dispatch } = useContext(AppContext);
 
-  const SCREENS = {
-    LOGIN: "LOGIN",
-    REGISTER: "REGISTER",
-    USER_INFO: "USER_INFO",
-  };
+  enum Screens {
+    Login = "LOGIN",
+    Register = "REGISTER",
+    UserInfo = "USER_INFO",
+  }
 
-  const [screen, setScreen] = useState(SCREENS.LOGIN);
+  const [screen, setScreen] = useState(Screens.Login);
+
+  const [cookies, setCookie, removeCookie] = useCookies(["auth"]);
+
+  useEffect(() => {
+    if (cookies.auth) {
+      const { user, token } = cookies.auth;
+      dispatch({
+        type: ActionTypes.LOGIN,
+        loginInfo: { user, token },
+      });
+      setScreen(Screens.UserInfo);
+    }
+  }, [Screens.UserInfo, cookies.auth, dispatch]);
+
+  const performLogout = () => {
+    removeCookie("auth", { path: "/" });
+    dispatch({ type: ActionTypes.LOGOUT });
+    setScreen(Screens.Login);
+  };
 
   const performLogin = async (
     email: string,
@@ -44,8 +64,18 @@ const Home = (): JSX.Element => {
         type: ActionTypes.LOGIN,
         loginInfo: { user, token },
       });
+      const cookieExpires = new Date();
+      cookieExpires.setHours(cookieExpires.getHours() + 11);
+      setCookie(
+        "auth",
+        { user, token },
+        {
+          path: "/",
+          expires: cookieExpires,
+        }
+      );
       callback(false, "");
-      setScreen(SCREENS.USER_INFO);
+      setScreen(Screens.UserInfo);
     } catch (error) {
       const response = (error as AxiosError).response;
       if (response && response.data) {
@@ -84,7 +114,7 @@ const Home = (): JSX.Element => {
       callback(false, "");
       const performLoginCallback = (hasError: boolean) => {
         if (hasError) {
-          setScreen(SCREENS.LOGIN);
+          setScreen(Screens.Login);
         }
       };
       performLogin(email, password, performLoginCallback);
@@ -110,7 +140,7 @@ const Home = (): JSX.Element => {
 
   const renderHome = () => {
     switch (screen) {
-      case SCREENS.LOGIN:
+      case Screens.Login:
         if (!state.token || !state.user) {
           return (
             <div>
@@ -122,7 +152,7 @@ const Home = (): JSX.Element => {
                   className="link"
                   onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
                     event.preventDefault();
-                    setScreen(SCREENS.REGISTER);
+                    setScreen(Screens.Register);
                   }}
                 >
                   Register here.
@@ -132,7 +162,7 @@ const Home = (): JSX.Element => {
             </div>
           );
         }
-      case SCREENS.REGISTER:
+      case Screens.Register:
         return (
           <div>
             <h2 className="text-2xl text-center">Register</h2>
@@ -143,7 +173,7 @@ const Home = (): JSX.Element => {
                 className="link"
                 onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
                   event.preventDefault();
-                  setScreen(SCREENS.LOGIN);
+                  setScreen(Screens.Login);
                 }}
               >
                 Login here.
@@ -152,7 +182,7 @@ const Home = (): JSX.Element => {
             <FormRegister performRegister={performRegister} />
           </div>
         );
-      case SCREENS.USER_INFO:
+      case Screens.UserInfo:
       default:
         if (state.user && state.token) {
           return (
@@ -160,10 +190,22 @@ const Home = (): JSX.Element => {
               <h2 className="text-2xl text-center">
                 Welcome <b>{state.user.name}</b>
               </h2>
+              <p className="pt-2 text-center">
+                <a
+                  href=""
+                  className="link"
+                  onClick={(event: React.MouseEvent<HTMLAnchorElement>) => {
+                    event.preventDefault();
+                    performLogout();
+                  }}
+                >
+                  Logout
+                </a>
+              </p>
             </div>
           );
         }
-        setScreen(SCREENS.LOGIN);
+        setScreen(Screens.Login);
         return null;
     }
   };
