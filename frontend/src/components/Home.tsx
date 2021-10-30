@@ -17,6 +17,9 @@ const Home = (): JSX.Element => {
 
   const [isLoadingFormSubmit, setIsLoadingFormSubmit] = useState(false);
 
+  const [loginHasError, setLoginHasError] = useState(false);
+  const [loginErrorMessage, setLoginErrorMessage] = useState("");
+
   const performLogin = async () => {
     interface LoginResponse {
       user: IUser;
@@ -32,23 +35,28 @@ const Home = (): JSX.Element => {
         }
       );
       if (response.status !== 200) {
-        console.log("Unexpected status code:", response);
+        console.log("Unexpected status code:", response.status);
         setIsLoadingFormSubmit(false);
         return;
       }
-      console.log(response.data);
       const user = response.data.user;
       const token = response.data.token;
       dispatch({
         type: ActionTypes.LOGIN,
         loginInfo: { user, token },
       });
+      setLoginHasError(false);
+      setLoginErrorMessage("");
     } catch (error) {
       const response = (error as AxiosError).response;
       if (response && response.data) {
         console.log("Error performing login:", response.data.message);
+        setLoginHasError(true);
+        setLoginErrorMessage("Invalid Email or Password.");
       } else {
         console.log("Error performing login:", error);
+        setLoginHasError(true);
+        setLoginErrorMessage("Login Failed.");
       }
     }
     setIsLoadingFormSubmit(false);
@@ -132,6 +140,11 @@ const Home = (): JSX.Element => {
               </p>
             )}
           </div>
+          {loginHasError ? (
+            <div className="my-2 w-48">
+              <p className="text-red-500">{loginErrorMessage}</p>
+            </div>
+          ) : null}
           {!isLoadingFormSubmit ? (
             <input
               type="submit"
@@ -159,7 +172,9 @@ const Home = (): JSX.Element => {
     }
     return (
       <div>
-        <p className="text-center">Welcome {state.user.name}</p>
+        <h2 className="text-2xl text-center">
+          Welcome <b>{state.user.name}</b>
+        </h2>
       </div>
     );
   };
