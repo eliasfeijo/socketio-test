@@ -1,14 +1,17 @@
-import axios, { AxiosError } from "axios";
-import React, { FormEvent, useCallback, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import Loader from "react-loader-spinner";
-import { IUser } from "../../contexts/AppContext";
 import { validateEmail } from "../../utils/Validations";
 
 interface Params {
-  onRegister: (user: IUser) => void;
+  performRegister: (
+    email: string,
+    name: string,
+    password: string,
+    callback: (hasError: boolean, errorMessage: string) => void
+  ) => void;
 }
 
-const FormRegister = ({ onRegister }: Params): JSX.Element => {
+const FormRegister = ({ performRegister }: Params): JSX.Element => {
   const [email, setEmail] = useState("");
   const [emailHasError, setEmailHasError] = useState(false);
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
@@ -42,59 +45,6 @@ const FormRegister = ({ onRegister }: Params): JSX.Element => {
       isMounted.current = false;
     };
   }, []);
-
-  const performRegister = useCallback(
-    async (performRegisterCallback) => {
-      type RegisterResponse = IUser;
-
-      try {
-        const response = await axios.post<RegisterResponse>(
-          "http://localhost:3000/api/users",
-          {
-            email,
-            name,
-            password,
-          }
-        );
-        if (response.status !== 201) {
-          console.log("Unexpected status code:", response.status);
-          performRegisterCallback(true, "Registration Failed.");
-          return;
-        }
-        const user = response.data;
-        performRegisterCallback(false, "", user);
-      } catch (error) {
-        const response = (error as AxiosError).response;
-        if (response && response.data) {
-          console.log("Error performing register:", response.data);
-          console.log("aaa");
-          console.log(response.data.errors);
-          console.log(response.data.errors[0]);
-          console.log(response.data.errors[0]?.message);
-          console.log(
-            response.data.errors[0]?.message === "email must be unique"
-          );
-          if (
-            response.data.errors &&
-            response.data.errors[0]?.message === "email must be unique"
-          ) {
-            performRegisterCallback(
-              true,
-              "Email has already been taken.",
-              null
-            );
-          } else {
-            performRegisterCallback(true, "Registration Failed.", null);
-          }
-        } else {
-          console.log("Error performing register:", error);
-          performRegisterCallback(true, "Registration Failed.", null);
-        }
-      }
-      return;
-    },
-    [email, name, password]
-  );
 
   const handleLoginFormSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -153,22 +103,18 @@ const FormRegister = ({ onRegister }: Params): JSX.Element => {
   useEffect(() => {
     const performRegisterCallback = (
       hasError: boolean,
-      errorMessage: string,
-      user: IUser | null
+      errorMessage: string
     ) => {
       if (isMounted.current) {
         setRegisterHasError(hasError);
         setRegisterErrorMessage(errorMessage);
         setIsLoadingFormSubmit(false);
       }
-      if (user) {
-        onRegister(user);
-      }
     };
     if (isLoadingFormSubmit) {
-      performRegister(performRegisterCallback);
+      performRegister(email, name, password, performRegisterCallback);
     }
-  }, [isLoadingFormSubmit, onRegister, performRegister]);
+  }, [email, isLoadingFormSubmit, name, password, performRegister]);
 
   return (
     <div className="flex justify-center">

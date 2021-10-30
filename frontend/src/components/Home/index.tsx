@@ -59,6 +59,55 @@ const Home = (): JSX.Element => {
     return;
   };
 
+  const performRegister = async (
+    email: string,
+    name: string,
+    password: string,
+    callback: (hasError: boolean, errorMessage: string) => void
+  ) => {
+    type RegisterResponse = IUser;
+
+    try {
+      const response = await axios.post<RegisterResponse>(
+        "http://localhost:3000/api/users",
+        {
+          email,
+          name,
+          password,
+        }
+      );
+      if (response.status !== 201) {
+        console.log("Unexpected status code:", response.status);
+        callback(true, "Registration Failed.");
+        return;
+      }
+      callback(false, "");
+      const performLoginCallback = (hasError: boolean) => {
+        if (hasError) {
+          setScreen(SCREENS.LOGIN);
+        }
+      };
+      performLogin(email, password, performLoginCallback);
+    } catch (error) {
+      const response = (error as AxiosError).response;
+      if (response && response.data) {
+        console.log("Error performing register:", response.data);
+        if (
+          response.data.errors &&
+          response.data.errors[0]?.message === "email must be unique"
+        ) {
+          callback(true, "Email has already been taken.");
+        } else {
+          callback(true, "Registration Failed.");
+        }
+      } else {
+        console.log("Error performing register:", error);
+        callback(true, "Registration Failed.");
+      }
+    }
+    return;
+  };
+
   const renderHome = () => {
     switch (screen) {
       case SCREENS.LOGIN:
@@ -100,7 +149,7 @@ const Home = (): JSX.Element => {
                 Login here.
               </a>
             </p>
-            <FormRegister onRegister={() => setScreen(SCREENS.LOGIN)} />
+            <FormRegister performRegister={performRegister} />
           </div>
         );
       case SCREENS.USER_INFO:
